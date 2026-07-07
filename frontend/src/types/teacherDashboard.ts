@@ -1,0 +1,267 @@
+export type DashboardView = 'dashboard' | 'evaluation-setup' | 'script-uploads' | 'analytics' | 'qcp' | 'omi' | 'my-class';
+
+export type EvaluationMode = 'NLP' | 'LLM';
+export type ExamType = 'Theory' | 'Technical';
+export type SessionStatus = 'created' | 'uploaded' | 'processing' | 'processed' | string;
+
+export interface SessionPreferences {
+  exam_type: ExamType;
+  language_exam?: boolean | null;
+  max_marks: number;
+  min_answer_length: number;
+  is_handwritten?: boolean;
+  llm_provider?: string;
+  llm_model?: string;
+}
+
+export interface TeacherSessionSummary {
+  session_id: string;
+  name: string;
+  status: SessionStatus;
+  correction_mode: EvaluationMode;
+  created_at: string;
+}
+
+export interface TeacherSession extends TeacherSessionSummary {
+  preferences: SessionPreferences;
+  custom_prompt?: string;
+  total_files?: number;
+  processed?: number;
+}
+
+export interface EvaluationSetupFormState {
+  name: string;
+  examType: ExamType;
+  correctionMode: EvaluationMode;
+  languageExam: boolean;
+  isHandwritten: boolean;
+  maxMarks: number;
+  minAnswerLength: number;
+  questionPaper: File | null;
+  teacherModelAnswer: File | null;
+  customPrompt: string;
+  llmProvider: string;
+  llmModel: string;
+}
+
+export interface ZipInspection {
+  pdfCount: number;
+  pdfNames: string[];
+  ignoredFiles: string[];
+  hasNestedFolders: boolean;
+  totalEntries: number;
+}
+
+export interface SessionStatusPayload {
+  status: SessionStatus;
+  total_files?: number;
+  processed?: number;
+}
+
+export interface NlpResult {
+  marks: number;
+  similarity: number;
+  keyword_score: number;
+  length_score: number;
+}
+
+export interface LlmResult {
+  marks: Record<string, number>;
+  question_feedback: Record<string, string>;
+  total_marks: number;
+  evaluation_note: string;
+  confidence_score: number;
+  other_info?: {
+    strengths?: string[];
+    weaknesses?: string[];
+    ocr_issue_detected?: boolean;
+  };
+}
+
+export interface SessionResult {
+  session_id: string;
+  student_name: string;
+  student_rollnum?: number;
+  pdf_file: string;
+  answer_text?: string;
+  reevaluation_history?: Array<{
+    at: string;
+    actor: string;
+    before: LlmResult | NlpResult;
+    after: LlmResult | NlpResult;
+  }>;
+  cheat_detection?: {
+    risk_level?: string;
+    risk_score?: number;
+    max_pair_score?: number;
+    flagged_pairs?: number;
+    matched_with?: string[];
+    cluster_id?: number | null;
+    cluster_size?: number;
+  };
+  result: NlpResult | LlmResult;
+}
+
+export interface CheatDetectionPair {
+  student_1: string;
+  student_2: string;
+  score: number;
+  risk_level: string;
+  suspicious: boolean;
+  cluster_id?: number | null;
+  signals: {
+    semantic: number;
+    token_overlap: number;
+    sequence: number;
+    rare_overlap: number;
+    length_similarity: number;
+  };
+}
+
+export interface CheatDetectionCluster {
+  cluster_id: number;
+  dbscan_label: number;
+  student_names: string[];
+  size: number;
+  average_similarity: number;
+  max_similarity: number;
+  average_pair_score: number;
+  max_pair_score: number;
+  suspicious_pairs: number;
+  suspicious: boolean;
+  risk_level: string;
+  answer_preview: string;
+}
+
+export interface CheatDetectionStudent {
+  student_name: string;
+  max_pair_score: number;
+  risk_score: number;
+  risk_level: string;
+  flagged_pairs: number;
+  matched_with: string[];
+  cluster_id?: number | null;
+  cluster_size?: number;
+}
+
+export interface CheatDetectionReport {
+  threshold: number;
+  total_students: number;
+  total_pairs: number;
+  flagged_pairs: CheatDetectionPair[];
+  pairs: CheatDetectionPair[];
+  students: CheatDetectionStudent[];
+  clusters: CheatDetectionCluster[];
+  summary: {
+    students_flagged: number;
+    pairs_flagged: number;
+    highest_pair_score: number;
+    clusters_flagged: number;
+    largest_cluster_size: number;
+  };
+}
+
+export interface CheatDetectionResponse {
+  status: string;
+  last_run?: string;
+  report: CheatDetectionReport | null;
+}
+
+export interface QCPFormState {
+  difficulty: string;
+  max_marks: number;
+  no_of_ques: number;
+  course: string;
+  choice_aval: boolean;
+  choice_type: string;
+  custom_prompt: string;
+  relevent_docs: File | null;
+}
+
+export interface OmiAnalysisResponse {
+  greeting: string;
+  overview: string;
+  strengths: string[];
+  areas_for_improvement: string[];
+  action_plan: string[];
+  insights?: string[];
+  priority_focus?: string[];
+  risk_signals?: string[];
+  teaching_strategy?: string[];
+  next_checkpoints?: string[];
+  trend_summary?: string;
+  confidence_note?: string;
+  performance_level?: 'excellent' | 'good' | 'average' | 'poor' | string;
+  error?: string;
+  raw?: string;
+}
+
+export interface TeacherDashboardSummary {
+  metrics: {
+    total_sessions: number;
+    processed_sessions: number;
+    total_submissions: number;
+    average_marks: number;
+    highest_marks: number;
+    lowest_marks: number;
+  };
+  trend: Array<{
+    session_id: string;
+    name: string;
+    date: string;
+    average_marks: number;
+    submissions: number;
+  }>;
+  common_mistakes: Array<{
+    name: string;
+    count: number;
+  }>;
+  toppers: Array<{
+    student_name: string;
+    session_name: string;
+    marks: number;
+    max_marks: number;
+    percentage: number;
+  }>;
+  score_distribution: Array<{
+    range: string;
+    students: number;
+  }>;
+  risk_bands: Array<{
+    name: string;
+    students: number;
+  }>;
+}
+
+export interface ClassroomHistoryEntry {
+  session_id: string;
+  marks?: number | null;
+  captured_at?: string;
+}
+
+export interface ClassroomStudent {
+  rollnum: number;
+  name: string;
+  name_key: string;
+  history?: ClassroomHistoryEntry[];
+  updated_at?: string;
+}
+
+export interface ClassroomStudentDetailResponse {
+  student: ClassroomStudent;
+  results: SessionResult[];
+  requests?: ReevaluationRequest[];
+}
+
+export interface ReevaluationRequest {
+  _id: string;
+  rollnum: number;
+  student_name: string;
+  session_id: string;
+  reason: string;
+  status: string;
+  created_at?: string;
+  approved_at?: string;
+  rejected_at?: string;
+  rejection_reason?: string;
+}
